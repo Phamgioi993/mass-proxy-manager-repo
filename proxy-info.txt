@@ -1,0 +1,1 @@
+Đây là file kết quả sẽ được tạo sau khi cài proxy, chứa IP:PORT:USER:PASS
