@@ -14,7 +14,10 @@ Script dùng để tự động cài đặt Dante SOCKS5 Proxy trên nhiều VPS
 2. Sửa `BOT_TOKEN` và `CHAT_ID` nếu dùng Telegram
 3. Chạy:
 
-```bash
+# Clone repo
+git clone https://github.com/Phamgioi993/mass-proxy-manager-repo.git
+cd mass-proxy-manager-repo
+
+# Chạy script quản lý
 chmod +x mass-proxy-manager.sh
 ./mass-proxy-manager.sh
-```
