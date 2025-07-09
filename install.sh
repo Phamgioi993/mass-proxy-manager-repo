@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ================================
-# Tự động cài đặt Dante SOCKS5 Proxy
-# ================================
+# ==============================
+# Cài đặt Dante SOCKS5 Proxy
+# ==============================
 
-# ⏳ Đợi apt nếu đang bị khóa
+# Tự động đợi lock apt nếu đang bị chiếm dụng
 function wait_for_apt() {
   while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
         fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
@@ -14,16 +14,27 @@ function wait_for_apt() {
   done
 }
 
-# 🌐 Tự phát hiện interface chính
+# Tự động phát hiện interface chính
 function detect_interface() {
   ip route get 8.8.8.8 | awk '{print $5; exit}'
 }
 
-# ▶️ Bắt đầu
+# Gửi thông tin proxy về Telegram
+function send_to_telegram() {
+  BOT_TOKEN="8101043998:AAEXeV13VjLn7w9Gev60ea6Sl2v2fOlhy_A"
+  CHAT_ID="YOUR_CHAT_ID"
+  MESSAGE="$1"
+  
+  curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+       -d "chat_id=$CHAT_ID" \
+       -d "text=$MESSAGE"
+}
+
+# Bắt đầu
 wait_for_apt
 apt update -y && apt install -y dante-server net-tools curl
 
-# 🔐 Tạo thông tin proxy ngẫu nhiên
+# Tạo thông tin proxy ngẫu nhiên
 USERNAME="user$(openssl rand -hex 2)"
 PASSWORD="$(openssl rand -hex 4)"
 PORT=$((RANDOM % 10000 + 10000))
@@ -34,8 +45,7 @@ cat <<EOF > /etc/danted.conf
 logoutput: /var/log/danted.log
 internal: $INTERFACE port = $PORT
 external: $INTERFACE
-
-method: username
+method: username none
 user.notprivileged: nobody
 
 client pass {
@@ -45,13 +55,12 @@ client pass {
 
 socks pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
-    protocol: tcp udp
-    method: username
     log: connect disconnect error
+    command: connect
 }
 EOF
 
-# 👤 Tạo user SOCKS5
+# Tạo user SOCKS5
 useradd -M -s /usr/sbin/nologin "$USERNAME"
 echo "$USERNAME:$PASSWORD" | chpasswd
 
@@ -71,4 +80,8 @@ IP=$(curl -s ipv4.icanhazip.com)
 echo ""
 echo -e "✅ SOCKS5 Proxy đã được cài đặt thành công!"
 echo -e "🔐 Proxy: $IP:$PORT:$USERNAME:$PASSWORD"
-echo "$IP:$PORT:$USERNAME:$PASSWORD" > proxy-info.txt
+echo "$IP:$PORT:$USERNAME:$PASSWORD" > /root/proxy-info.txt
+echo "PROXY=\"$IP:$PORT:$USERNAME:$PASSWORD\"" > /root/proxy-connection.txt
+
+# Gửi thông tin proxy về Telegram
+send_to_telegram "✅ SOCKS5 Proxy đã được cài đặt thành công! 🔐 Proxy: $IP:$PORT:$USERNAME:$PASSWORD"
